@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RZ Demolition Derby</title>
+    <title>RZ Duck Pond Game</title>
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: #87ceeb;
             overflow: hidden;
         }
 
         #gameCanvas {
             display: block;
             margin: 0 auto;
-            background: url('https://via.placeholder.com/800x600') no-repeat center center;
+            background: url('https://via.placeholder.com/800x600/87ceeb/ffffff?text=Duck+Pond') no-repeat center center;
             background-size: cover;
             border: 5px solid #333;
         }
 
-        .score {
+        .message {
             position: absolute;
             top: 10px;
             left: 10px;
@@ -29,6 +29,7 @@
             background: rgba(0, 0, 0, 0.7);
             padding: 10px;
             border-radius: 8px;
+            display: none;
         }
 
         .win-message {
@@ -56,98 +57,85 @@
     </style>
 </head>
 <body>
-    <div class="score">Score: <span id="score">0</span></div>
-    <div id="winMessage" class="win-message">
-        You demolished the structure!<br>
-        <button onclick="restartGame()">Play Again</button>
-    </div>
+    <div class="message" id="message"></div>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
-        const winMessage = document.getElementById('winMessage');
 
-        let score = 0;
-        let blocks = [];
+        const ducks = [];
+        const facts = [
+            "RZ Construction completed 50 bridge projects last year!",
+            "RZ specializes in high-quality construction services!",
+            "Safety and precision are RZ's top priorities!",
+            "RZ offers top-notch demolition services!",
+        ];
+        const prizeMessage = "Congratulations! You won an RZ prize!";
 
-        // Initialize blocks (grid-like structure)
-        const initBlocks = () => {
-            blocks = [];
-            const rows = 5;
-            const cols = 8;
-            const blockWidth = canvas.width / cols;
-            const blockHeight = 50;
+        const duckCount = 10;
 
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    blocks.push({
-                        x: col * blockWidth,
-                        y: row * blockHeight,
-                        width: blockWidth - 5,
-                        height: blockHeight - 5,
-                        destroyed: false
-                    });
-                }
-            }
-        };
+        const random = (min, max) => Math.random() * (max - min) + min;
 
-        // Draw blocks
-        const drawBlocks = () => {
-            blocks.forEach(block => {
-                if (!block.destroyed) {
-                    ctx.fillStyle = '#ff6f61';
-                    ctx.fillRect(block.x, block.y, block.width, block.height);
-                    ctx.strokeStyle = '#333';
-                    ctx.strokeRect(block.x, block.y, block.width, block.height);
-                }
+        // Initialize ducks
+        for (let i = 0; i < duckCount; i++) {
+            ducks.push({
+                x: random(50, canvas.width - 100),
+                y: random(50, canvas.height - 100),
+                size: 50,
+                fact: facts[Math.floor(Math.random() * facts.length)],
+                isPrize: Math.random() < 0.2, // 20% chance to be a prize
+            });
+        }
+
+        // Draw ducks
+        const drawDucks = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ducks.forEach((duck) => {
+                ctx.beginPath();
+                ctx.arc(duck.x, duck.y, duck.size / 2, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffcc00';
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.stroke();
+                ctx.closePath();
+
+                // Construction hat
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(duck.x - 15, duck.y - 30, 30, 10);
+                ctx.fillRect(duck.x - 10, duck.y - 40, 20, 10);
             });
         };
 
-        // Check if all blocks are destroyed
-        const checkWin = () => {
-            if (blocks.every(block => block.destroyed)) {
-                winMessage.style.display = 'block';
-            }
-        };
-
-        // Handle clicks
+        // Handle duck picking
         canvas.addEventListener('click', (e) => {
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            blocks.forEach(block => {
-                if (!block.destroyed &&
-                    mouseX >= block.x && mouseX <= block.x + block.width &&
-                    mouseY >= block.y && mouseY <= block.y + block.height) {
-                        block.destroyed = true;
-                        score += 10;
-                        scoreEl.textContent = score;
-                        checkWin();
+            ducks.forEach((duck, index) => {
+                const distance = Math.sqrt((mouseX - duck.x) ** 2 + (mouseY - duck.y) ** 2);
+                if (distance < duck.size / 2) {
+                    const messageEl = document.getElementById('message');
+                    if (duck.isPrize) {
+                        messageEl.textContent = prizeMessage;
+                    } else {
+                        messageEl.textContent = duck.fact;
+                    }
+                    messageEl.style.display = 'block';
+                    setTimeout(() => {
+                        messageEl.style.display = 'none';
+                    }, 3000);
+
+                    // Remove duck
+                    ducks.splice(index, 1);
+                    drawDucks();
                 }
             });
         });
 
-        // Restart the game
-        const restartGame = () => {
-            score = 0;
-            scoreEl.textContent = score;
-            winMessage.style.display = 'none';
-            initBlocks();
-            draw();
-        };
-
-        // Game loop
-        const draw = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBlocks();
-        };
-
-        // Initialize and start
-        initBlocks();
-        setInterval(draw, 1000 / 60);
+        // Start game
+        drawDucks();
     </script>
 </body>
 </html>
