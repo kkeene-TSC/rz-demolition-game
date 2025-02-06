@@ -77,30 +77,46 @@
         const prizeMessage = "Congratulations! You won an RZ prize!";
 
         const duckCount = 10;
-
         const random = (min, max) => Math.random() * (max - min) + min;
 
         for (let i = 0; i < duckCount; i++) {
-            ducks.push({
-                x: random(50, canvas.width - 100),
-                y: random(50, canvas.height - 100),
-                size: 80,
-                speedX: random(-1, 1),
-                speedY: random(-1, 1),
-                angle: random(0, Math.PI * 2),
-                fact: facts[Math.floor(Math.random() * facts.length)],
-                isPrize: Math.random() < 0.2,
-            });
+            let newDuck;
+            let overlapping;
+            do {
+                newDuck = {
+                    x: random(50, canvas.width - 100),
+                    y: random(50, canvas.height - 100),
+                    size: 80,
+                    speedX: random(-1, 1),
+                    speedY: random(-1, 1),
+                    angle: random(0, Math.PI * 2),
+                    wobbleSpeed: random(0.05, 0.15),
+                    fact: facts[Math.floor(Math.random() * facts.length)],
+                    isPrize: Math.random() < 0.2,
+                };
+                overlapping = ducks.some(duck => {
+                    let dx = newDuck.x - duck.x;
+                    let dy = newDuck.y - duck.y;
+                    return Math.sqrt(dx * dx + dy * dy) < newDuck.size;
+                });
+            } while (overlapping);
+            ducks.push(newDuck);
         }
 
         const moveDucks = () => {
             ducks.forEach((duck, i) => {
                 duck.x += duck.speedX;
                 duck.y += duck.speedY;
-                duck.angle += 0.02;
+                duck.angle += duck.wobbleSpeed;
                 
-                if (duck.x < 0 || duck.x > canvas.width - duck.size) duck.speedX *= -1;
-                if (duck.y < 0 || duck.y > canvas.height - duck.size) duck.speedY *= -1;
+                if (duck.x < 0 || duck.x > canvas.width - duck.size) {
+                    duck.speedX *= -1;
+                    duck.wobbleSpeed = 0.3;
+                }
+                if (duck.y < 0 || duck.y > canvas.height - duck.size) {
+                    duck.speedY *= -1;
+                    duck.wobbleSpeed = 0.3;
+                }
 
                 for (let j = 0; j < ducks.length; j++) {
                     if (i !== j) {
@@ -108,8 +124,11 @@
                         let dy = ducks[j].y - duck.y;
                         let distance = Math.sqrt(dx * dx + dy * dy);
                         if (distance < duck.size) {
-                            duck.speedX *= -1;
-                            duck.speedY *= -1;
+                            let angle = Math.atan2(dy, dx);
+                            let speed = Math.sqrt(duck.speedX ** 2 + duck.speedY ** 2);
+                            duck.speedX = -Math.cos(angle) * speed;
+                            duck.speedY = -Math.sin(angle) * speed;
+                            duck.wobbleSpeed = 0.4;
                         }
                     }
                 }
@@ -121,30 +140,11 @@
             ducks.forEach((duck) => {
                 ctx.save();
                 ctx.translate(duck.x + duck.size / 2, duck.y + duck.size / 2);
-                ctx.rotate(Math.sin(duck.angle) * 0.1);
+                ctx.rotate(Math.sin(duck.angle) * 0.2);
                 ctx.drawImage(duckImage, -duck.size / 2, -duck.size / 2, duck.size, duck.size);
                 ctx.restore();
             });
         };
-
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            ducks.forEach((duck, index) => {
-                if (
-                    mouseX >= duck.x && mouseX <= duck.x + duck.size &&
-                    mouseY >= duck.y && mouseY <= duck.y + duck.size
-                ) {
-                    const messageEl = document.getElementById('message');
-                    messageEl.textContent = duck.isPrize ? prizeMessage : duck.fact;
-                    messageEl.style.display = 'block';
-                    setTimeout(() => { messageEl.style.display = 'none'; }, 3000);
-                    ducks.splice(index, 1);
-                }
-            });
-        });
 
         const updateGame = () => {
             moveDucks();
