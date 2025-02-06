@@ -65,7 +65,7 @@
         const ctx = canvas.getContext('2d');
 
         const duckImage = new Image();
-        duckImage.src = 'https://raw.githubusercontent.com/kkeene-TSC/rz-demolition-game/refs/heads/main/rz_duck.png'; // Updated with the uploaded duck image
+        duckImage.src = 'https://raw.githubusercontent.com/kkeene-TSC/rz-demolition-game/refs/heads/main/rz_duck.png';
 
         const ducks = [];
         const facts = [
@@ -80,7 +80,6 @@
 
         const random = (min, max) => Math.random() * (max - min) + min;
 
-        // Initialize ducks
         for (let i = 0; i < duckCount; i++) {
             ducks.push({
                 x: random(50, canvas.width - 100),
@@ -88,31 +87,46 @@
                 size: 80,
                 speedX: random(-1, 1),
                 speedY: random(-1, 1),
+                angle: random(0, Math.PI * 2),
                 fact: facts[Math.floor(Math.random() * facts.length)],
-                isPrize: Math.random() < 0.2, // 20% chance to be a prize
+                isPrize: Math.random() < 0.2,
             });
         }
 
-        // Move ducks
         const moveDucks = () => {
-            ducks.forEach((duck) => {
+            ducks.forEach((duck, i) => {
                 duck.x += duck.speedX;
                 duck.y += duck.speedY;
-
+                duck.angle += 0.02;
+                
                 if (duck.x < 0 || duck.x > canvas.width - duck.size) duck.speedX *= -1;
                 if (duck.y < 0 || duck.y > canvas.height - duck.size) duck.speedY *= -1;
+
+                for (let j = 0; j < ducks.length; j++) {
+                    if (i !== j) {
+                        let dx = ducks[j].x - duck.x;
+                        let dy = ducks[j].y - duck.y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < duck.size) {
+                            duck.speedX *= -1;
+                            duck.speedY *= -1;
+                        }
+                    }
+                }
             });
         };
 
-        // Draw ducks
         const drawDucks = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ducks.forEach((duck) => {
-                ctx.drawImage(duckImage, duck.x, duck.y, duck.size, duck.size);
+                ctx.save();
+                ctx.translate(duck.x + duck.size / 2, duck.y + duck.size / 2);
+                ctx.rotate(Math.sin(duck.angle) * 0.1);
+                ctx.drawImage(duckImage, -duck.size / 2, -duck.size / 2, duck.size, duck.size);
+                ctx.restore();
             });
         };
 
-        // Handle duck picking
         canvas.addEventListener('click', (e) => {
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
@@ -124,30 +138,20 @@
                     mouseY >= duck.y && mouseY <= duck.y + duck.size
                 ) {
                     const messageEl = document.getElementById('message');
-                    if (duck.isPrize) {
-                        messageEl.textContent = prizeMessage;
-                    } else {
-                        messageEl.textContent = duck.fact;
-                    }
+                    messageEl.textContent = duck.isPrize ? prizeMessage : duck.fact;
                     messageEl.style.display = 'block';
-                    setTimeout(() => {
-                        messageEl.style.display = 'none';
-                    }, 3000);
-
-                    // Remove duck
+                    setTimeout(() => { messageEl.style.display = 'none'; }, 3000);
                     ducks.splice(index, 1);
                 }
             });
         });
 
-        // Game loop
         const updateGame = () => {
             moveDucks();
             drawDucks();
             requestAnimationFrame(updateGame);
         };
 
-        // Start game
         duckImage.onload = () => {
             updateGame();
         };
