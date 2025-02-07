@@ -111,7 +111,7 @@
                 
                 if (duck.x < 0 || duck.x > canvas.width - duck.size) {
                     duck.speedX *= -1;
-                    duck.wobbleSpeed = 0.3;
+                    duck.wobbleSpeed = 0.15;
                 }
                 if (duck.y < 0 || duck.y > canvas.height - duck.size) {
                     duck.speedY *= -1;
@@ -128,7 +128,7 @@
                             let speed = Math.sqrt(duck.speedX ** 2 + duck.speedY ** 2);
                             duck.speedX = -Math.cos(angle) * speed;
                             duck.speedY = -Math.sin(angle) * speed;
-                            duck.wobbleSpeed = 0.4;
+                            duck.wobbleSpeed = 0.2;
                         }
                     }
                 }
