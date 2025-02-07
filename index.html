@@ -111,9 +111,26 @@
                 
                 if (duck.x < 0 || duck.x > canvas.width - duck.size) {
                     duck.speedX *= -1;
+                    duck.wobbleSpeed = 0.15; setTimeout(() => { duck.wobbleSpeed = random(0.0125, 0.0375); }, 2000);
                 }
                 if (duck.y < 0 || duck.y > canvas.height - duck.size) {
                     duck.speedY *= -1;
+                    duck.wobbleSpeed = 0.3; setTimeout(() => { duck.wobbleSpeed = random(0.0125, 0.0375); }, 2000);
+                }
+
+                for (let j = 0; j < ducks.length; j++) {
+                    if (i !== j) {
+                        let dx = ducks[j].x - duck.x;
+                        let dy = ducks[j].y - duck.y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < duck.size) {
+                            let angle = Math.atan2(dy, dx);
+                            let speed = Math.sqrt(duck.speedX ** 2 + duck.speedY ** 2);
+                            duck.speedX = -Math.cos(angle) * speed;
+                            duck.speedY = -Math.sin(angle) * speed;
+                            duck.wobbleSpeed = 0.2; setTimeout(() => { duck.wobbleSpeed = random(0.0125, 0.0375); }, 2000);
+                        }
+                    }
                 }
             });
         };
@@ -128,25 +145,6 @@
                 ctx.restore();
             });
         };
-
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            ducks.forEach((duck, index) => {
-                if (
-                    mouseX >= duck.x && mouseX <= duck.x + duck.size &&
-                    mouseY >= duck.y && mouseY <= duck.y + duck.size
-                ) {
-                    const messageEl = document.getElementById('message');
-                    messageEl.textContent = duck.isPrize ? prizeMessage : duck.fact;
-                    messageEl.style.display = 'block';
-                    setTimeout(() => { messageEl.style.display = 'none'; }, 3000);
-                    ducks.splice(index, 1);
-                }
-            });
-        });
 
         const updateGame = () => {
             moveDucks();
